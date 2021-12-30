@@ -27,7 +27,7 @@ def createDeepLabv3():
     Returns:
         model: Returns the DeepLabv3 model with the ResNet101 backbone.
     """
-    model = models.segmentation.deeplabv3_resnet101(pretrained=False,
+    model = models.segmentation.deeplabv3_resnet101(pretrained=True,
                                                     progress=True,
                                                     )
     
@@ -118,9 +118,50 @@ def train(mean, std, fold, training_data_path, device, epochs, train_bs, val_bs,
 
         train_loss = training_loop(model, device, train_loader, optimizer, loss_function, epoch, num_epochs=epochs)
 
-        val_loss = val_loop(model, device, val_loader, loss_function)
+        val_loss, mean_dice, mean_dice_exc_c_0 = val_loop(model, device, val_loader, loss_function)
         
 
+        train_loss_all.append(train_loss)
+        val_loss_list.append(val_loss)
+        mean_dice.append(mean_dice)
+        mean_dice_exc_c_0.append(mean_dice_exc_c_0)
+
+
+    train_loss_all = np.array(train_loss_all)
+    train_loss_all = train_loss_all.flatten()
+    train_loss_plot = plt.figure()
+    plt.plot(train_loss_all)
+    plt.xlabel("Step")
+    plt.ylabel("Training Loss")
+    train_loss_plot.savefig(os.path.join(opt.outdir, f'training_loss_fold{opt.fold}.png'))
+
+
+    val_loss_plot = plt.figure()
+    plt.plot(val_loss_list)
+    plt.xlabel("Epoch")
+    plt.ylabel("Validation Loss")
+    val_loss_plot.savefig(os.path.join(opt.outdir, f'validation_loss_fold{opt.fold}.png'))
+
+
+    mean_dice = plt.figure()
+    plt.plot(mean_dice)
+    plt.xlabel("Epoch")
+    plt.ylabel("Mean Dice")
+    mean_dice.savefig(os.path.join(opt.outdir, f'mean_dice_fold{opt.fold}.png'))
+
+    mean_dice_exc_c_0 = plt.figure()
+    plt.plot(mean_dice_exc_c_0)
+    plt.xlabel("Epoch")
+    plt.ylabel("Mean Dice w/o channel 0")
+    mean_dice_exc_c_0.savefig(os.path.join(opt.outdir, f'mean_dice_w/o_ch0_fold{opt.fold}.png'))
+
+
+    print("plots saved..")
+
+    end_time = datetime.now()
+
+    end_time = end_time.strftime("%H:%M:%S")
+    print("Start Time = ", starting_time, "End Time = ", end_time)
 
 if __name__ == "__main__" :
 
