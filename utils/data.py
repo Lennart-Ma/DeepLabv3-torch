@@ -117,10 +117,11 @@ class SegmentationDataset(VisionDataset):
                 image = normalize(image)
                 #mask = normalize(mask)
                 mask = np.array(mask)
-                mask = np.array([mask])
+                mask_B_1_H_W = np.array([mask])
                 mask = torch.tensor(mask)
+                mask_B_1_H_W = torch.tensor(mask_B_1_H_W)
                             
             else:
                 raise Exception("Backend not implemented")
 
-            return image, mask
+            return image, mask, mask_B_1_H_W
