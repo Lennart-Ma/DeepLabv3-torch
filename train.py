@@ -109,9 +109,8 @@ def train(mean, std, fold, training_data_path, device, epochs, train_bs, val_bs,
 
     train_loss_all = []
     val_loss_list = []
-    accuracy_list = []
-    f1_score_list = []
-    auc_list = []
+    mean_dice_list = []
+    mean_dice_exc_c_0_list = []
 
     # Start training
     for epoch in range(epochs):
@@ -120,11 +119,16 @@ def train(mean, std, fold, training_data_path, device, epochs, train_bs, val_bs,
 
         val_loss, mean_dice, mean_dice_exc_c_0 = val_loop(model, device, val_loader, loss_function)
         
+        scheduler.step(mean_dice)
+    
+        if all(mean_dice > i for i in mean_dice_list):
+            torch.save(model.state_dict(), os.path.join(outdir, f"model_fold_{fold}.bin"))
+            print("Model with improved mean_dice_list saved to outdir")
 
         train_loss_all.append(train_loss)
         val_loss_list.append(val_loss)
-        mean_dice.append(mean_dice)
-        mean_dice_exc_c_0.append(mean_dice_exc_c_0)
+        mean_dice_list.append(mean_dice)
+        mean_dice_exc_c_0_list.append(mean_dice_exc_c_0)
 
 
     train_loss_all = np.array(train_loss_all)
@@ -143,17 +147,17 @@ def train(mean, std, fold, training_data_path, device, epochs, train_bs, val_bs,
     val_loss_plot.savefig(os.path.join(opt.outdir, f'validation_loss_fold{opt.fold}.png'))
 
 
-    mean_dice = plt.figure()
-    plt.plot(mean_dice)
+    mean_dice_plot = plt.figure()
+    plt.plot(mean_dice_list)
     plt.xlabel("Epoch")
     plt.ylabel("Mean Dice")
-    mean_dice.savefig(os.path.join(opt.outdir, f'mean_dice_fold{opt.fold}.png'))
+    mean_dice_plot.savefig(os.path.join(opt.outdir, f'mean_dice_fold{opt.fold}.png'))
 
-    mean_dice_exc_c_0 = plt.figure()
-    plt.plot(mean_dice_exc_c_0)
+    mean_dice_exc_c_0_plot = plt.figure()
+    plt.plot(mean_dice_exc_c_0_list)
     plt.xlabel("Epoch")
     plt.ylabel("Mean Dice w/o channel 0")
-    mean_dice_exc_c_0.savefig(os.path.join(opt.outdir, f'mean_dice_w/o_ch0_fold{opt.fold}.png'))
+    mean_dice_exc_c_0_plot.savefig(os.path.join(opt.outdir, f'mean_dice_without_ch0_fold{opt.fold}.png'))
 
 
     print("plots saved..")
